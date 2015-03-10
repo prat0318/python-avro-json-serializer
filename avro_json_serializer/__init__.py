@@ -101,23 +101,21 @@ class AvroJsonSerializer(object):
         if null:
             "null"
         else:
-            {"<type>": value}
+            value
         Then used one that matches to serialize `datum`
         :param schema: Avro schema for this union
         :param datum: Data to serialize
-        :return: dict {"type": value} or "null"
+        :return: value or "null"
         """
         for candiate_schema in schema.schemas:
             if validate(candiate_schema, datum):
                 if candiate_schema.type == "null":
                     return self._serialize_null()
                 else:
-                    field_type_name = candiate_schema.type
-                    if isinstance(candiate_schema, avro.schema.NamedSchema):
-                        field_type_name = candiate_schema.name
-                    return {
-                        field_type_name: self._serialize_data(candiate_schema, datum)
-                    }
+                    if candiate_schema.type == "string" and datum == "null":
+                        return self._serialize_null()
+                    return self._serialize_data(candiate_schema, datum)
+
         raise schema.AvroTypeException(schema, datum)
 
     def _serialize_record(self, schema, datum):
